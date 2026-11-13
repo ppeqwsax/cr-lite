@@ -200,9 +200,10 @@ var Sim = (function () {
           }
         }
         const towers = this.aliveTowers(foe);
-        // 同一条路上的公主塔优先；没塔了才去打国王塔
-        let princesses = towers.filter((t) => t.kind === 'princess');
-        const pool = princesses.length ? princesses : towers;
+        // 国王塔要等自家公主塔掉一座之后才会「激活」并可被攻击；
+        // 激活后按距离取最近的塔，而不是死盯另一座公主塔。
+        let pool = towers.filter((t) => t.active);
+        if (!pool.length) pool = towers;
         for (let i = 0; i < pool.length; i++) {
           const t = pool[i];
           const d = CR.dist(u.x, u.y, t.x, t.y);
