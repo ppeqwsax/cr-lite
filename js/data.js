@@ -86,7 +86,7 @@ var CR = (function () {
       spellDmg: 330, spellRadius: 1.9, radius: 0.5, color: '#ff7b4a'
     },
     {
-      id: 'arrows', name: '箭雨', emoji: '☄️', cost: 3, kind: 'spell', count: 1,
+      id: 'arrows', name: '万箭齐发', emoji: '☄️', cost: 3, kind: 'spell', count: 1,
       spellDmg: 132, spellRadius: 3.1, radius: 0.5, color: '#ffd166'
     },
     {
@@ -103,6 +103,49 @@ var CR = (function () {
       id: 'hog', name: '野猪骑士', emoji: '🐗', cost: 4, kind: 'troop', count: 1,
       hp: 820, dmg: 158, hitSpeed: 1.4, range: 0.85, speed: 2.5, targets: 'buildings', radius: 0.46,
       color: '#e8a87c'
+    },
+    {
+      id: 'zap', name: '小电', emoji: '⚡', cost: 2, kind: 'spell', count: 1,
+      spellDmg: 190, spellRadius: 1.6, stun: 0.45, radius: 0.5, color: '#7fe3ff'
+    },
+    {
+      id: 'rocket', name: '火箭', emoji: '🚀', cost: 6, kind: 'spell', count: 1,
+      spellDmg: 700, spellRadius: 1.7, radius: 0.5, color: '#ff9f43'
+    },
+    {
+      id: 'golem', name: '石头人', emoji: '🗿', cost: 8, kind: 'troop', count: 1,
+      hp: 4200, dmg: 240, hitSpeed: 1.5, range: 0.95, speed: 0.9, targets: 'buildings', radius: 0.62,
+      splits: 'golemite', splitCount: 2, color: '#b8b2a6'
+    },
+    {
+      id: 'golemite', name: '小石头人', emoji: '🪨', cost: 0, kind: 'troop', count: 1, hidden: true,
+      hp: 1100, dmg: 95, hitSpeed: 1.5, range: 0.9, speed: 1.2, targets: 'buildings', radius: 0.34,
+      color: '#9d968a'
+    },
+    {
+      id: 'darkprince', name: '黑骑士', emoji: '🐴', cost: 4, kind: 'troop', count: 1,
+      hp: 1000, dmg: 150, hitSpeed: 1.4, range: 0.9, speed: 1.9, targets: 'all', radius: 0.46,
+      splash: 1.05, charge: true, chargeDist: 1.7, color: '#8f8ff0'
+    },
+    {
+      id: 'barbarians', name: '野蛮人', emoji: '⚔️', cost: 5, kind: 'troop', count: 4,
+      hp: 430, dmg: 90, hitSpeed: 1.4, range: 0.85, speed: 1.7, targets: 'all', radius: 0.34,
+      color: '#e8c07c'
+    },
+    {
+      id: 'bomber', name: '炸弹人', emoji: '🧨', cost: 3, kind: 'troop', count: 1,
+      hp: 280, dmg: 118, hitSpeed: 1.5, range: 4.0, speed: 1.5, targets: 'all', radius: 0.3,
+      ranged: true, splash: 1.05, color: '#ffb870'
+    },
+    {
+      id: 'skeletonarmy', name: '骷髅军团', emoji: '🦴', cost: 3, kind: 'troop', count: 12,
+      hp: 60, dmg: 30, hitSpeed: 0.9, range: 0.6, speed: 2.3, targets: 'all', radius: 0.22,
+      color: '#e4e8f0'
+    },
+    {
+      id: 'wizard', name: '法师', emoji: '🧙', cost: 5, kind: 'troop', count: 1,
+      hp: 720, dmg: 185, hitSpeed: 1.4, range: 5.0, speed: 1.5, targets: 'all', radius: 0.36,
+      ranged: true, splash: 1.0, color: '#b39dff'
     }
   ];
 

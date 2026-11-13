@@ -22,7 +22,27 @@
   const netStatusEl = $('netStatus');
 
   const DECK_KEY = 'cr-deck-v1';
-  const AI_DECK = ['hog', 'musketeer', 'valkyrie', 'skeletons', 'archers', 'cannon', 'fireball', 'giant'];
+
+  /* AI 牌组：从全部可见卡里随机 8 张，保证至少两张低费，免得一直卡手 */
+  function pickAiDeck() {
+    const pool = CR.CARDS.filter((c) => !c.hidden && c.cost > 0).map((c) => c.id);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+    }
+    const picked = pool.slice(0, 8);
+    const cheap = (id) => CR.CARD_BY_ID[id].cost <= 3;
+    if (picked.filter(cheap).length < 2) {
+      for (let i = 0; i < pool.length && picked.filter(cheap).length < 2; i++) {
+        const cand = pool[i];
+        if (!cheap(cand) || picked.indexOf(cand) >= 0) continue;
+        for (let k = picked.length - 1; k >= 0; k--) {
+          if (!cheap(picked[k])) { picked[k] = cand; break; }
+        }
+      }
+    }
+    return picked;
+  }
 
   let screen = 'menu';
   let game = null;
@@ -116,7 +136,7 @@
       '  </div>' +
       '  <div class="section-label">牌组 <span class="deck-hint" id="deckCount">' + deck.length + '/8</span></div>' +
       '  <div class="deck-grid" id="deckGrid">' +
-      CR.CARDS.map((c) => {
+      CR.CARDS.filter((c) => !c.hidden).map((c) => {
         const on = deck.indexOf(c.id) >= 0;
         return '<div class="deck-card' + (on ? ' on' : '') + '" data-card="' + c.id + '">' +
           '<span class="emoji">' + c.emoji + '</span>' +
@@ -224,7 +244,7 @@
   /* ---------------- 开局 ---------------- */
 
   function startBattle() {
-    game = new Sim.Game([deck.slice(), AI_DECK.slice()]);
+    game = new Sim.Game([deck.slice(), pickAiDeck()]);
     bot = new AI.Bot(1, difficulty);
     selected = -1;
     screen = 'battle';

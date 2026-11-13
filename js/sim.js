@@ -25,7 +25,7 @@ var Sim = (function () {
       hp: st.hp, maxHp: st.hp,
       dmg: st.dmg, hitSpeed: st.hitSpeed, range: st.range, radius: st.radius,
       cd: 0, alive: true, active: def.kind === 'princess',
-      flash: 0
+      flash: 0, stun: 0
     };
   }
 
@@ -95,33 +95,56 @@ var Sim = (function () {
     spawnUnits(team, card, x, y) {
       const n = card.count || 1;
       for (let i = 0; i < n; i++) {
-        const ang = (Math.PI * 2 * i) / n + Math.PI / 2;
-        const off = n === 1 ? 0 : 0.42;
-        const ux = CR.clamp(x + Math.cos(ang) * off, 0.5, CR.COLS - 0.5);
-        const uy = CR.clamp(y + Math.sin(ang) * off, 0.5, CR.ROWS - 0.5);
-        this.units.push({
-          id: nextUnitId++,
+        let ux;
+        let uy;
+        if (n <= 4) {
+          const ang = (Math.PI * 2 * i) / n + Math.PI / 2;
+          const off = n === 1 ? 0 : 0.42;
+          ux = x + Math.cos(ang) * off;
+          uy = y + Math.sin(ang) * off;
+        } else {
+          // 人多时排成方阵，避免全部叠在一个点上
+          const cols = Math.ceil(Math.sqrt(n));
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+          ux = x + (col - (cols - 1) / 2) * 0.44;
+          uy = y + (row - (Math.ceil(n / cols) - 1) / 2) * 0.44;
+        }
+        this.addUnit({
           team: team,
-          card: card.id,
-          kind: card.kind,
-          x: ux, y: uy,
-          hp: card.hp, maxHp: card.hp,
-          dmg: card.dmg,
-          hitSpeed: card.hitSpeed,
-          range: card.range,
-          speed: card.speed || 0,
-          targets: card.targets,
-          radius: card.radius,
-          splash: card.splash || 0,
-          ranged: !!card.ranged,
-          life: card.life || 0,
-          cd: 0.35,
-          retarget: Math.random() * 0.2,
-          target: null,
-          flash: 0,
-          spawn: 0.5
+          card: card,
+          x: CR.clamp(ux, 0.5, CR.COLS - 0.5),
+          y: CR.clamp(uy, 0.5, CR.ROWS - 0.5)
         });
       }
+    }
+
+    addUnit(opt) {
+      const card = opt.card;
+      this.units.push({
+        id: nextUnitId++,
+        team: opt.team,
+        card: card.id,
+        kind: card.kind,
+        x: opt.x, y: opt.y,
+        hp: opt.hp || card.hp, maxHp: card.hp,
+        dmg: card.dmg,
+        hitSpeed: card.hitSpeed,
+        range: card.range,
+        speed: card.speed || 0,
+        targets: card.targets,
+        radius: card.radius,
+        splash: card.splash || 0,
+        ranged: !!card.ranged,
+        life: card.life || 0,
+        cd: 0.35,
+        retarget: Math.random() * 0.2,
+        target: null,
+        flash: 0,
+        stun: 0,
+        moved: 0,
+        spawn: opt.spawn !== undefined ? opt.spawn : 0.5
+      });
     }
 
     castSpell(team, card, x, y) {
@@ -130,12 +153,14 @@ var Sim = (function () {
         if (u.team === team) return;
         if (CR.dist(u.x, u.y, x, y) <= card.spellRadius + u.radius * 0.5) {
           this.damageUnit(u, card.spellDmg * 0.85);
+          if (card.stun) u.stun = Math.max(u.stun || 0, card.stun);
         }
       });
       this.towers.forEach((t) => {
         if (t.team === team || !t.alive) return;
         if (CR.dist(t.x, t.y, x, y) <= card.spellRadius + t.radius) {
           this.hitTower(t, card.spellDmg * 0.5);
+          if (card.stun) t.stun = Math.max(t.stun || 0, card.stun * 0.8);
         }
       });
     }
@@ -213,6 +238,7 @@ var Sim = (function () {
       const step = Math.min(u.speed * dt, d);
       u.x += (dx / d) * step;
       u.y += (dy / d) * step;
+      u.moved = (u.moved || 0) + step;
       return d - step;
     }
 
@@ -224,6 +250,23 @@ var Sim = (function () {
       if (u.hp <= 0) {
         u.dead = true;
         this.blasts.push({ x: u.x, y: u.y, r: 0.7, t: 0, dur: 0.3, color: u.team === 0 ? '#6ec1ff' : '#ff7b7b' });
+        const card = CR.CARD_BY_ID[u.card];
+        // 石头人：死亡后分裂成小石头人
+        if (card && card.splits) {
+          const sub = CR.CARD_BY_ID[card.splits];
+          const cnt = card.splitCount || 2;
+          for (let i = 0; i < cnt; i++) {
+            const ang = (Math.PI * 2 * i) / cnt + Math.PI / 2;
+            this.addUnit({
+              team: u.team,
+              card: sub,
+              x: CR.clamp(u.x + Math.cos(ang) * 0.5, 0.5, CR.COLS - 0.5),
+              y: CR.clamp(u.y + Math.sin(ang) * 0.5, 0.5, CR.ROWS - 0.5),
+              spawn: 0.25
+            });
+          }
+          this.blasts.push({ x: u.x, y: u.y, r: 1.0, t: 0, dur: 0.4, color: '#d8cfc0' });
+        }
       }
     }
 
@@ -292,6 +335,7 @@ var Sim = (function () {
         }
         if (u.flash > 0) u.flash -= dt;
         if (u.cd > 0) u.cd -= dt;
+        if (u.stun > 0) { u.stun -= dt; continue; }   // 被小电电住：这帧不动也不打
 
         if (doRetarget || !u.target || (u.target.hp !== undefined && u.target.hp <= 0) || u.target.dead) {
           u.target = this.pickTarget(u);
@@ -309,19 +353,27 @@ var Sim = (function () {
           if (u.speed > 0) this.stepToward(u, tx, ty, dt);
         } else if (u.cd <= 0) {
           u.cd = u.hitSpeed;
+          let dmg = u.dmg;
+          // 黑骑士：跑动一段距离后的第一下是冲锋，双倍伤害
+          const cardDef = CR.CARD_BY_ID[u.card];
+          if (cardDef && cardDef.charge && u.moved >= (cardDef.chargeDist || 1.6)) {
+            dmg *= 2;
+            this.blasts.push({ x: u.x, y: u.y, r: 0.9, t: 0, dur: 0.3, color: '#ffe08a' });
+          }
+          u.moved = 0;
           if (u.splash > 0) {
             this.blasts.push({ x: tx, y: ty, r: u.splash, t: 0, dur: 0.28, color: u.team === 0 ? '#8fd0ff' : '#ffb0b0' });
             this.units.forEach((o) => {
               if (o.team !== u.team && !o.dead && CR.dist(o.x, o.y, tx, ty) <= u.splash + o.radius) {
-                this.damageUnit(o, u.dmg);
+                this.damageUnit(o, dmg);
               }
             });
             const tw = this.towers.filter((t) => t.team !== u.team && t.alive && CR.dist(t.x, t.y, tx, ty) <= u.splash + t.radius);
-            tw.forEach((t) => this.hitTower(t, u.dmg));
+            tw.forEach((t) => this.hitTower(t, dmg));
           } else if (target.card) {
-            this.damageUnit(target, u.dmg);
+            this.damageUnit(target, dmg);
           } else {
-            this.hitTower(target, u.dmg);
+            this.hitTower(target, dmg);
           }
           if (u.ranged) {
             this.bolts.push({ x0: u.x, y0: u.y, x1: tx, y1: ty, t: 0, dur: 0.16, team: u.team });
@@ -334,11 +386,33 @@ var Sim = (function () {
       }
       this.units = this.units.filter((u) => !u.dead);
 
+      // 轻量分离：同侧单位不要完全叠在一起（过河中的单位不参与，避免被推进河里）
+      for (let i = 0; i < this.units.length; i++) {
+        const a = this.units[i];
+        if (CR.inRiver(a.y)) continue;
+        for (let j = i + 1; j < this.units.length; j++) {
+          const b = this.units[j];
+          if (CR.inRiver(b.y)) continue;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const minD = (a.radius + b.radius) * 0.82;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < 0.0004 || d2 >= minD * minD) continue;
+          const d = Math.sqrt(d2);
+          const push = (minD - d) * 0.45;
+          const nx = dx / d;
+          const ny = dy / d;
+          a.x -= nx * push; a.y -= ny * push;
+          b.x += nx * push; b.y += ny * push;
+        }
+      }
+
       // 塔攻击
       this.towers.forEach((t) => {
         if (!t.alive || !t.active) return;
         if (t.flash > 0) t.flash -= dt;
         if (t.cd > 0) t.cd -= dt;
+        if (t.stun > 0) { t.stun -= dt; return; }
         let best = null;
         let bestD = Infinity;
         this.units.forEach((u) => {
