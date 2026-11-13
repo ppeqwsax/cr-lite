@@ -143,6 +143,7 @@ var Sim = (function () {
         flash: 0,
         stun: 0,
         moved: 0,
+        summonT: card.summon ? (card.summon.first || 1) : 0,
         spawn: opt.spawn !== undefined ? opt.spawn : 0.5
       });
     }
@@ -337,6 +338,30 @@ var Sim = (function () {
         if (u.flash > 0) u.flash -= dt;
         if (u.cd > 0) u.cd -= dt;
         if (u.stun > 0) { u.stun -= dt; continue; }   // 被小电电住：这帧不动也不打
+
+        // 女巫：每隔一段时间在脚边召唤小骷髅
+        const cardDef0 = CR.CARD_BY_ID[u.card];
+        if (cardDef0 && cardDef0.summon) {
+          u.summonT -= dt;
+          if (u.summonT <= 0) {
+            u.summonT = cardDef0.summon.interval;
+            const sc = CR.CARD_BY_ID[cardDef0.summon.card];
+            const n = cardDef0.summon.count;
+            if (sc && this.units.length < 80) {
+              for (let k = 0; k < n; k++) {
+                const ang = (Math.PI * 2 * k) / n + Math.random() * 0.6;
+                this.addUnit({
+                  team: u.team,
+                  card: sc,
+                  x: CR.clamp(u.x + Math.cos(ang) * 0.75, 0.5, CR.COLS - 0.5),
+                  y: CR.clamp(u.y + Math.sin(ang) * 0.75, 0.5, CR.ROWS - 0.5),
+                  spawn: 0.3
+                });
+              }
+              this.blasts.push({ x: u.x, y: u.y, r: 0.85, t: 0, dur: 0.35, color: '#c9b6ff' });
+            }
+          }
+        }
 
         if (doRetarget || !u.target || (u.target.hp !== undefined && u.target.hp <= 0) || u.target.dead) {
           u.target = this.pickTarget(u);

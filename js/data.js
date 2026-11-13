@@ -146,6 +146,12 @@ var CR = (function () {
       id: 'wizard', name: '法师', emoji: '🧙', cost: 5, kind: 'troop', count: 1,
       hp: 720, dmg: 185, hitSpeed: 1.4, range: 5.0, speed: 1.5, targets: 'all', radius: 0.36,
       ranged: true, splash: 1.0, color: '#b39dff'
+    },
+    {
+      id: 'witch', name: '女巫', emoji: '🧙‍♀️', cost: 5, kind: 'troop', count: 1,
+      hp: 700, dmg: 120, hitSpeed: 1.3, range: 4.6, speed: 1.3, targets: 'all', radius: 0.36,
+      ranged: true, splash: 0.9, color: '#c9b6ff',
+      summon: { card: 'skeletons', count: 3, interval: 7, first: 1.6 }
     }
   ];
 
