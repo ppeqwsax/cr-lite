@@ -145,11 +145,86 @@
           '</div>';
       }).join('') +
       '  </div>' +
+      '  <div class="row" style="margin-top:8px">' +
+      '    <button class="btn" id="codexBtn">卡牌图鉴 · ' + CR.CARDS.filter((c) => !c.hidden).length + ' 张</button>' +
+      '  </div>' +
       '  <div class="row" style="margin-top:12px">' +
       '    <button class="btn primary" id="startBtn"' + (deck.length === 8 ? '' : ' disabled') + '>开始对战</button>' +
       '  </div>' +
       '  <div class="tip">点下方手牌选中，再点自己半场下兵；法术可放全图。<br>圣水上限 10，2.8 秒回 1 点；常规时间最后 60 秒起双倍，打平进 60 秒加时。</div>' +
       '</div>';
+  }
+
+  /* ---------------- 卡牌图鉴 ---------------- */
+
+  function statsOf(c) {
+    const s = [];
+    if (c.kind === 'spell') {
+      if (c.spellDmg) s.push('伤害 ' + c.spellDmg);
+      s.push('范围 ' + c.spellRadius.toFixed(1) + ' 格');
+      if (c.stun) s.push('僵直 ' + c.stun + 's');
+    } else {
+      if (c.count > 1) s.push('数量 ' + c.count);
+      s.push('血量 ' + c.hp);
+      if (c.dmg) s.push('伤害 ' + c.dmg);
+      if (c.dmg && c.hitSpeed) s.push('攻速 ' + c.hitSpeed + 's');
+      if (c.range !== undefined) s.push('射程 ' + c.range.toFixed(2) + ' 格');
+      if (c.speed) s.push('移速 ' + c.speed);
+      if (c.life) s.push('存活 ' + c.life + 's');
+      if (c.splash) s.push('溅射 ' + c.splash + ' 格');
+      if (c.targets === 'buildings') s.push('只打建筑');
+      if (c.charge) s.push('冲锋翻倍');
+      if (c.hitStun) s.push('命中僵直 ' + c.hitStun + 's');
+      if (c.splits) s.push('死亡分裂 ×' + (c.splitCount || 2));
+      if (c.deathBlast) s.push('死亡爆炸 ' + c.deathBlast.dmg);
+      if (c.summon) s.push('每 ' + c.summon.interval + 's 召唤 ' + c.summon.count);
+    }
+    return s.join(' · ');
+  }
+
+  const KIND_LABEL = { troop: '军队', spell: '法术', building: '建筑' };
+
+  function codexCardHtml(c) {
+    return '<div class="codex-item">' +
+      '<div class="codex-head">' +
+      '<span class="codex-emoji">' + c.emoji + '</span>' +
+      '<span class="codex-name">' + c.name + '</span>' +
+      '<span class="codex-kind">' + (KIND_LABEL[c.kind] || '军队') + '</span>' +
+      '<span class="cost">' + c.cost + '</span>' +
+      '</div>' +
+      '<div class="codex-desc">' + (CR.CARD_DESC[c.id] || '') + '</div>' +
+      '<div class="codex-stats">' + statsOf(c) + '</div>' +
+      '</div>';
+  }
+
+  function showCodex(filter) {
+    screen = 'codex';
+    const all = CR.CARDS.filter((c) => !c.hidden);
+    const list = all.filter((c) => filter === 'all' || c.kind === filter)
+      .slice()
+      .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name, 'zh'));
+    const chips = [['all', '全部'], ['troop', '军队'], ['spell', '法术'], ['building', '建筑']];
+    overlay.innerHTML =
+      '<div class="panel codex-panel">' +
+      '  <h2 class="panel-title">卡牌图鉴</h2>' +
+      '  <p class="panel-sub">共 ' + all.length + ' 张可组牌，牌组取 8 张</p>' +
+      '  <div class="chips" id="codexChips">' +
+      chips.map(([k, label]) => '<button class="chip' + (filter === k ? ' on' : '') + '" data-kind="' + k + '">' + label + '</button>').join('') +
+      '  </div>' +
+      '  <div class="codex-list" id="codexList">' + list.map(codexCardHtml).join('') + '</div>' +
+      '  <div class="row" style="margin-top:12px">' +
+      '    <button class="btn primary" id="codexBack">返回菜单</button>' +
+      '  </div>' +
+      '</div>';
+    overlay.classList.remove('hidden');
+    $('codexChips').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-kind]');
+      if (!b) return;
+      showCodex(b.dataset.kind);
+      overlay.scrollTop = 0;
+    });
+    $('codexBack').addEventListener('click', showMenu);
+    overlay.scrollTop = 0;
   }
 
   function showMenu() {
@@ -227,6 +302,8 @@
       if (mode === 'online') { toast('先创建或加入房间'); return; }
       startBattle();
     });
+
+    $('codexBtn').addEventListener('click', () => showCodex('all'));
 
     $('createBtn').addEventListener('click', () => {
       if (deck.length !== 8) { toast('牌组需要 8 张'); return; }

@@ -470,4 +470,38 @@ body {
   .deck-card .emoji { font-size: 17px; }
   .deck-card .cname { font-size: 9.5px; }
   .foot { font-size: 10px; }
+  /* 手机上让菜单/图鉴铺满整个视口，可整页滚动 */
+  .overlay { position: fixed; inset: 0; z-index: 20; }
+}
+
+/* ---------- 卡牌图鉴 ---------- */
+.codex-panel { width: min(560px, 100%); }
+.chips { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 8px 0 12px; }
+.chip {
+  padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04); color: var(--muted);
+  font-size: 12px; cursor: pointer; font-family: inherit;
+}
+.chip.on { border-color: rgba(74, 163, 255, 0.9); color: #fff; background: rgba(74, 163, 255, 0.18); }
+.codex-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; text-align: left; }
+.codex-item {
+  padding: 9px 10px; border-radius: 12px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03);
+}
+.codex-head { display: flex; align-items: center; gap: 6px; }
+.codex-emoji { font-size: 17px; line-height: 1; }
+.codex-name { font-weight: 600; font-size: 13.5px; color: #eaf1ff; }
+.codex-kind {
+  font-size: 10px; color: var(--muted); border: 1px solid var(--line);
+  border-radius: 6px; padding: 0 4px; line-height: 15px;
+}
+.codex-head .cost {
+  margin-left: auto; font-size: 10px; font-weight: 700; color: #fff;
+  background: var(--elixir); border-radius: 6px; padding: 1px 6px;
+}
+.codex-desc { font-size: 11.5px; color: #a9bcd8; line-height: 1.5; margin: 6px 0 4px; }
+.codex-stats { font-size: 10.5px; color: rgba(160, 185, 220, 0.7); line-height: 1.45; }
+
+@media (max-width: 520px) {
+  .codex-list { grid-template-columns: 1fr; }
 }

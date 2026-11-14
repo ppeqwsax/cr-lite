@@ -153,14 +153,14 @@ var Sim = (function () {
       this.units.forEach((u) => {
         if (u.team === team) return;
         if (CR.dist(u.x, u.y, x, y) <= card.spellRadius + u.radius * 0.5) {
-          this.damageUnit(u, card.spellDmg * 0.85);
+          if (card.spellDmg > 0) this.damageUnit(u, card.spellDmg * 0.85);
           if (card.stun) u.stun = Math.max(u.stun || 0, card.stun);
         }
       });
       this.towers.forEach((t) => {
         if (t.team === team || !t.alive) return;
         if (CR.dist(t.x, t.y, x, y) <= card.spellRadius + t.radius) {
-          this.hitTower(t, card.spellDmg * 0.5);
+          if (card.spellDmg > 0) this.hitTower(t, card.spellDmg * 0.5);
           if (card.stun) t.stun = Math.max(t.stun || 0, card.stun * 0.8);
         }
       });
@@ -187,7 +187,7 @@ var Sim = (function () {
           const o = this.units[i];
           if (o.team !== u.team) {
             const d = CR.dist(u.x, u.y, o.x, o.y);
-            if (d < bestD && d <= 6.2) { bestD = d; best = o; }
+            if (d < bestD && d <= 5.2) { bestD = d; best = o; }
           }
         }
       }
@@ -268,6 +268,21 @@ var Sim = (function () {
             });
           }
           this.blasts.push({ x: u.x, y: u.y, r: 1.0, t: 0, dur: 0.4, color: '#d8cfc0' });
+        }
+        // 大骷髅：死亡爆炸，对周围单位与塔造成伤害
+        if (card && card.deathBlast) {
+          const db = card.deathBlast;
+          this.blasts.push({ x: u.x, y: u.y, r: db.radius, t: 0, dur: 0.55, color: '#ffd166' });
+          this.units.forEach((o) => {
+            if (o.team !== u.team && !o.dead && CR.dist(o.x, o.y, u.x, u.y) <= db.radius + o.radius) {
+              this.damageUnit(o, db.dmg);
+            }
+          });
+          this.towers.forEach((t) => {
+            if (t.team !== u.team && t.alive && CR.dist(t.x, t.y, u.x, u.y) <= db.radius + t.radius) {
+              this.hitTower(t, db.dmg * 0.5);
+            }
+          });
         }
       }
     }
@@ -387,17 +402,22 @@ var Sim = (function () {
             this.blasts.push({ x: u.x, y: u.y, r: 0.9, t: 0, dur: 0.3, color: '#ffe08a' });
           }
           u.moved = 0;
+          if (dmg <= 0) continue;   // 纯召唤类建筑（骷髅墓碑）不造成伤害
+          // 冰法师：命中后短暂僵直
+          const stunOnHit = cardDef && cardDef.hitStun ? cardDef.hitStun : 0;
           if (u.splash > 0) {
             this.blasts.push({ x: tx, y: ty, r: u.splash, t: 0, dur: 0.28, color: u.team === 0 ? '#8fd0ff' : '#ffb0b0' });
             this.units.forEach((o) => {
               if (o.team !== u.team && !o.dead && CR.dist(o.x, o.y, tx, ty) <= u.splash + o.radius) {
                 this.damageUnit(o, dmg);
+                if (stunOnHit && !o.dead) o.stun = Math.max(o.stun || 0, stunOnHit);
               }
             });
             const tw = this.towers.filter((t) => t.team !== u.team && t.alive && CR.dist(t.x, t.y, tx, ty) <= u.splash + t.radius);
             tw.forEach((t) => this.hitTower(t, dmg));
           } else if (target.card) {
             this.damageUnit(target, dmg);
+            if (stunOnHit && !target.dead) target.stun = Math.max(target.stun || 0, stunOnHit);
           } else {
             this.hitTower(target, dmg);
           }
@@ -502,3 +522,4 @@ var Sim = (function () {
 
   return { Game: Game };
 })();
+
