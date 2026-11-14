@@ -150,11 +150,22 @@ var Render = (function () {
     const ring = u.team === 0 ? '#7cc4ff' : '#ff9aa6';
 
     ctx.save();
+    if (u.ghost) ctx.globalAlpha = 0.6;
     // 落地阴影
     ctx.fillStyle = 'rgba(0,0,0,0.28)';
     ctx.beginPath();
     ctx.ellipse(x, y + r * 0.75, r * 0.85, r * 0.4, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    if (u.ghost) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(x, y, r * 1.25, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
     ctx.fillStyle = u.flash > 0 ? '#ffffff' : team;
     ctx.beginPath();

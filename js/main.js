@@ -372,6 +372,18 @@
         drawFrame();
       },
       onResult: () => showNetResult(),
+      onDeny: (reason) => {
+        handSig = '';
+        toast(reason || '这张牌现在下不了');
+      },
+      onLink: (mode, rtt) => {
+        if (!net) return;
+        const who = net.role === 'host' ? '房主' : '客机';
+        const tag = mode === 'direct'
+          ? ('直连' + (rtt ? ' · ' + rtt + 'ms' : ''))
+          : '中转';
+        netStatusEl.textContent = '联机 · ' + who + ' · ' + tag;
+      },
       onStatus: (text, kind) => {
         const sub = $('connSub');
         if (sub) sub.textContent = text;
@@ -450,7 +462,7 @@
     if (net && net.role === 'guest' && net.snap) {
       const sn = net.snap;
       return {
-        hand: sn.h[t], next: sn.nx[t], elixir: sn.e[t],
+        hand: sn.h[t], next: sn.nx[t], elixir: net.predictedElixir(t),
         crownsMe: sn.cr[t], crownsFoe: sn.cr[1 - t],
         time: sn.ph === 'overtime' ? sn.ov : sn.tl, phase: sn.ph
       };
@@ -584,9 +596,7 @@
     if (card.kind !== 'spell' && !CR.canDeployAt(team, x, y)) { toast('只能下在自己半场'); return; }
 
     if (net && net.role === 'guest') {
-      net.requestPlay(selected, x, y);
-      selected = -1;
-      handSig = '';
+      if (net.predictPlay(selected, x, y)) { selected = -1; handSig = ''; }
       return;
     }
     const res = game.play(team, selected, x, y);
