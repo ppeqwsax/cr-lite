@@ -173,6 +173,8 @@
       if (c.life) s.push('存活 ' + c.life + 's');
       if (c.splash) s.push('溅射 ' + c.splash + ' 格');
       if (c.targets === 'buildings') s.push('只打建筑');
+      if (c.flying) s.push('空中单位');
+      if (c.hitsAir === false) s.push('打不到空中');
       if (c.charge) s.push('冲锋翻倍');
       if (c.hitStun) s.push('命中僵直 ' + c.hitStun + 's');
       if (c.splits) s.push('死亡分裂 ×' + (c.splitCount || 2));

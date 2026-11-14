@@ -79,7 +79,7 @@ var CR = (function () {
     {
       id: 'cannon', name: '加农炮', emoji: '💣', cost: 3, kind: 'building', count: 1,
       hp: 460, dmg: 74, hitSpeed: 0.9, range: 4.6, speed: 0, targets: 'all', radius: 0.5,
-      life: 30, color: '#ffd166'
+      life: 30, hitsAir: false, color: '#ffd166'
     },
     {
       id: 'fireball', name: '火球', emoji: '🔥', cost: 4, kind: 'spell', count: 1,
@@ -156,11 +156,12 @@ var CR = (function () {
     {
       id: 'babydragon', name: '飞龙宝宝', emoji: '🐉', cost: 4, kind: 'troop', count: 1,
       hp: 800, dmg: 105, hitSpeed: 1.6, range: 3.2, speed: 1.6, targets: 'all', radius: 0.4,
-      ranged: true, splash: 1.1, color: '#a5e0ff'
+      ranged: true, splash: 1.1, flying: true, color: '#a5e0ff'
     },
     {
       id: 'minions', name: '亡灵', emoji: '🦇', cost: 3, kind: 'troop', count: 3,
       hp: 150, dmg: 55, hitSpeed: 0.8, range: 0.7, speed: 2.4, targets: 'all', radius: 0.26,
+      flying: true,
       color: '#b8b8ff'
     },
     {
@@ -196,7 +197,7 @@ var CR = (function () {
     giant: '只打建筑，血非常厚。放在桥头吸引塔的火力，让你的后排安全输出。',
     goblins: '三只高速小兵，便宜、出手快，适合解巨人、野猪这类大单位。',
     minipekka: '高伤近战，一刀能砍掉大半血，专门用来切肉盾和偷塔，但很脆。',
-    cannon: '防守建筑，自动攻击范围内所有单位，能拉扯敌人走位，30 秒后消失。',
+    cannon: '防守建筑，自动攻击范围内的地面单位（打不到空中），能拉扯敌人走位，30 秒后消失。',
     fireball: '范围法术，砸中范围内所有单位与塔；对塔伤害减半，用来清小兵或补塔。',
     arrows: '大范围低伤法术，专门清骷髅军团、哥布林这类成群的小兵。',
     valkyrie: '近战范围伤害，血厚，旋转一刀能同时打一圈，最适合解小兵海。',

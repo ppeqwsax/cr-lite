@@ -421,7 +421,7 @@ class NetPlay {
       seenCard[key] = true;
       units.push({
         id: id, team: u[1], card: u[2], x: x, y: y,
-        hp: hp, maxHp: card.hp, radius: card.radius, flash: 0
+        hp: hp, maxHp: card.hp, radius: card.radius, flash: 0, flying: !!card.flying
       });
     });
 
@@ -441,7 +441,7 @@ class NetPlay {
       const card = CR.CARD_BY_ID[p.card];
       units.push({
         id: 'ghost' + i, team: 1, card: p.card, x: p.x, y: p.y,
-        hp: card.hp, maxHp: card.hp, radius: card.radius, flash: 0, ghost: true
+        hp: card.hp, maxHp: card.hp, radius: card.radius, flash: 0, ghost: true, flying: !!card.flying
       });
     }
     this.pending = stillPending;

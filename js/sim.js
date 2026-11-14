@@ -136,6 +136,9 @@ var Sim = (function () {
         radius: card.radius,
         splash: card.splash || 0,
         ranged: !!card.ranged,
+        /* 空中单位：只有飞行单位、远程单位、以及明确能打空中的建筑才打得中 */
+        flying: !!card.flying,
+        hitsAir: card.hitsAir !== false && (!!card.flying || !!card.ranged || card.hitsAir === true),
         life: card.life || 0,
         cd: 0.35,
         retarget: Math.random() * 0.2,
@@ -146,6 +149,12 @@ var Sim = (function () {
         summonT: card.summon ? (card.summon.first || 1) : 0,
         spawn: opt.spawn !== undefined ? opt.spawn : 0.5
       });
+    }
+
+    /* u 能不能打 o：地面单位打不到飞行单位 */
+    canHit(u, o) {
+      if (!o || !o.flying) return true;
+      return !!u.hitsAir;
     }
 
     castSpell(team, card, x, y) {
@@ -185,7 +194,7 @@ var Sim = (function () {
       if (u.targets !== 'buildings') {
         for (let i = 0; i < this.units.length; i++) {
           const o = this.units[i];
-          if (o.team !== u.team) {
+          if (o.team !== u.team && !o.dead && this.canHit(u, o)) {
             const d = CR.dist(u.x, u.y, o.x, o.y);
             if (d < bestD && d <= 5.2) { bestD = d; best = o; }
           }
@@ -408,7 +417,7 @@ var Sim = (function () {
           if (u.splash > 0) {
             this.blasts.push({ x: tx, y: ty, r: u.splash, t: 0, dur: 0.28, color: u.team === 0 ? '#8fd0ff' : '#ffb0b0' });
             this.units.forEach((o) => {
-              if (o.team !== u.team && !o.dead && CR.dist(o.x, o.y, tx, ty) <= u.splash + o.radius) {
+              if (o.team !== u.team && !o.dead && this.canHit(u, o) && CR.dist(o.x, o.y, tx, ty) <= u.splash + o.radius) {
                 this.damageUnit(o, dmg);
                 if (stunOnHit && !o.dead) o.stun = Math.max(o.stun || 0, stunOnHit);
               }

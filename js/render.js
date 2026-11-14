@@ -136,18 +136,25 @@ var Render = (function () {
 
   function drawUnit(ctx, u) {
     const x = px(u.x);
-    const y = px(u.y);
+    const py = px(u.y);
     const card = CR.CARD_BY_ID[u.card];
     const r = Math.max(11, (u.radius || 0.4) * T * 1.35);
+    /* 空中单位：整体上移一点，影子落在下方，一眼能看出在飞 */
+    const lift = u.flying ? r * 0.55 : 0;
+    const y = py - lift;
     const team = u.team === 0 ? '#2d6cc0' : '#b8384a';
     const ring = u.team === 0 ? '#7cc4ff' : '#ff9aa6';
 
     ctx.save();
     if (u.ghost) ctx.globalAlpha = 0.6;
     // 落地阴影
-    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.fillStyle = u.flying ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.28)';
     ctx.beginPath();
-    ctx.ellipse(x, y + r * 0.75, r * 0.85, r * 0.4, 0, 0, Math.PI * 2);
+    if (u.flying) {
+      ctx.ellipse(x, py + r * 0.62, r * 0.62, r * 0.26, 0, 0, Math.PI * 2);
+    } else {
+      ctx.ellipse(x, y + r * 0.75, r * 0.85, r * 0.4, 0, 0, Math.PI * 2);
+    }
     ctx.fill();
 
     if (u.ghost) {
@@ -166,7 +173,12 @@ var Render = (function () {
     ctx.fill();
     ctx.strokeStyle = ring;
     ctx.lineWidth = 1.6;
+    if (u.flying) {
+      /* 空中单位：虚线描边 + 下方细影子，和地面部队区分开 */
+      ctx.setLineDash([4, 3]);
+    }
     ctx.stroke();
+    ctx.setLineDash([]);
 
     // 内圈提亮，让 emoji 在深色圆上用白底更能看清
     ctx.fillStyle = 'rgba(255,255,255,0.86)';
