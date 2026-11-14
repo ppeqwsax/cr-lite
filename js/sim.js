@@ -514,7 +514,7 @@ var Sim = (function () {
         cr: this.players.map((p) => p.crowns),
         h: this.players.map((p) => p.hand.slice()),
         nx: this.players.map((p) => p.next),
-        tw: this.towers.filter((t) => t.alive || t.kind === 'king').map((t) => [t.id, Math.max(0, Math.round(t.hp))]),
+        tw: this.towers.map((t) => [t.id, Math.max(0, Math.round(t.hp))]),
         u: this.units.map((u) => [u.id, u.team, u.card, Math.round(u.x * 100) / 100, Math.round(u.y * 100) / 100, Math.max(0, Math.round(u.hp))])
       };
     }

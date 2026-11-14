@@ -198,25 +198,31 @@ class NetPlay {
     } else if (e === 'snap') {
       if (!d) return;
       const now = this.now;
-      if (this.lastArrive) {
+      const lastS = this.buf.length ? this.buf[this.buf.length - 1] : null;
+      const sameBurst = lastS && now - lastS.arrive < 0.012;
+
+      if (!sameBurst && this.lastArrive) {
+        /* 只统计成批之后的真实到包间隔（中转会一次吐好几条） */
         const gap = now - this.lastArrive;
-        if (gap > 0.004 && gap < 0.4) {
+        if (gap > 0.02 && gap < 0.6) {
           this.gaps.push(gap);
-          if (this.gaps.length > 16) this.gaps.shift();
+          if (this.gaps.length > 14) this.gaps.shift();
         }
       }
       this.lastArrive = now;
       this.lastRecv = now;
       this.snapAt = now;
       this.snap = d;
-      this.buf.push({ t: now, d: d });
-      if (this.buf.length > 8) this.buf.shift();
 
-      /* 自适应缓冲：到包越不稳，缓冲越长 */
-      if (this.gaps.length >= 3) {
-        const avg = this.gaps.reduce((a, b) => a + b, 0) / this.gaps.length;
+      /* 同一批里只留最新一条：突发到达不会把插值时间线挤成一坨 */
+      if (sameBurst) { lastS.t = now; lastS.d = d; lastS.arrive = now; }
+      else { this.buf.push({ t: now, d: d, arrive: now }); }
+      while (this.buf.length > 10) this.buf.shift();
+
+      /* 自适应缓冲：缓冲要盖住最大的到包间隔，否则播放时钟会跑到最新快照前面 */
+      if (this.gaps.length >= 2) {
         const max = Math.max.apply(null, this.gaps);
-        this.delay = CR.clamp(Math.max(avg * 1.35, max * 0.85) + 0.02, 0.045, 0.12);
+        this.delay = CR.clamp(max * 1.05 + 0.03, 0.06, 0.30);
       }
 
       if (d.fx && d.fx.length) {
@@ -379,10 +385,10 @@ class NetPlay {
     if (b !== a && b.t > a.t) {
       alpha = CR.clamp((t - a.t) / (b.t - a.t), 0, 1);
     } else if (t > a.t && ai > 0) {
-      /* 快照断档：沿最近速度外推，最多 120ms，避免画面冻住 */
+      /* 快照断档：沿最近速度继续外推（最多 0.3s），宁可略过冲也不冻住 */
       const prev = this.buf[ai - 1];
       const gap = Math.max(0.016, a.t - prev.t);
-      extrap = Math.min(0.12, t - a.t) / gap;
+      extrap = Math.min(0.30, t - a.t) / gap;
     }
 
     const sa = a.d;
@@ -449,7 +455,9 @@ class NetPlay {
 
     const towers = CR.TOWERS.map((t2) => {
       const st = CR.TOWER_STATS[t2.kind];
-      const hp = hpMap[t2.id] !== undefined ? hpMap[t2.id] : st.hp;
+      /* 快照里有塔就按快照走（缺失=已被拆掉）；老快照没 tw 字段才退回避 */
+      const known = sb.tw && sb.tw.length;
+      const hp = hpMap[t2.id] !== undefined ? hpMap[t2.id] : (known ? 0 : st.hp);
       return {
         id: t2.id, team: ft(t2.team), kind: t2.kind, x: fx(t2.x), y: fy(t2.y),
         hp: hp, maxHp: st.hp, alive: hp > 0, active: true, flash: 0
