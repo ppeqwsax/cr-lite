@@ -607,11 +607,17 @@
   /* ---------------- 渲染 ---------------- */
 
   function drawFrame() {
-    const view = (net && net.role === 'guest' && net.view) ? net.view : (game || idle());
+    const guest = !!(net && net.role === 'guest' && net.view);
+    const view = guest ? net.view : (game || idle());
+    /* 客机画面做了 180° 翻转，鼠标光标（世界坐标）也要跟着翻，否则会出现对称的第二个准星 */
+    let cur = null;
+    if (screen === 'battle' && cursor) {
+      cur = guest ? { x: CR.COLS - cursor.x, y: CR.ROWS - cursor.y, ok: cursor.ok } : cursor;
+    }
     Render.draw(canvas, view, {
       time: clock,
       placing: selected >= 0 && screen === 'battle' ? { team: 0 } : null,
-      cursor: screen === 'battle' ? cursor : null
+      cursor: cur
     });
   }
 

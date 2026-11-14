@@ -110,18 +110,11 @@ var Render = (function () {
   }
 
   function drawTower(ctx, tw) {
+    if (!tw.alive) return; /* 被拆掉的塔直接不画 */
     const x = px(tw.x);
     const y = px(tw.y);
     const r = tw.kind === 'king' ? 26 : 22;
     ctx.save();
-    if (!tw.alive) {
-      ctx.globalAlpha = 0.35;
-      ctx.fillStyle = '#3a3f4d';
-      roundRect(ctx, x - r, y - r, r * 2, r * 2, 8);
-      ctx.fill();
-      ctx.restore();
-      return;
-    }
     const base = tw.team === 0 ? '#2d6cc0' : '#b8384a';
     const light = tw.team === 0 ? '#5fa8f5' : '#f0707f';
     ctx.fillStyle = tw.flash > 0 ? '#ffffff' : base;
